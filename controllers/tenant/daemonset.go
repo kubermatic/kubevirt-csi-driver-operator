@@ -137,7 +137,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 								},
 							},
 							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Path: "/healthz",
 										Port: intstr.IntOrString{Type: intstr.String, StrVal: "healthz"},
@@ -169,7 +169,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 								"--v=5",
 							},
 							Lifecycle: &corev1.Lifecycle{
-								PreStop: &corev1.Handler{
+								PreStop: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											"/bin/sh", "-c", "rm -rf /registration/csi.kubevirt.io-reg.sock /csi/csi.sock",

@@ -98,7 +98,7 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	_, err = r.reconcileConfigMap(ctx, objMeta, tenant.Spec.InfraClusterNamespace, tenant.Spec.InfraClusterLabels)
 	if err != nil {
-		l.Info("Error reconciling csi driver, requeuing.")
+		l.Info("Error reconciling configMap, requeuing.")
 		return ctrl.Result{}, err
 	}
 
@@ -123,6 +123,12 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	_, err = r.reconcileDeployment(ctx, objMeta, "", "")
 	if err != nil {
 		l.Info("Error reconciling deployment, requeuing.")
+		return ctrl.Result{}, err
+	}
+
+	err = r.reconcileStorageClasses(ctx, objMeta, tenant.Spec.StorageClasses)
+	if err != nil {
+		l.Info("Error reconciling storageClass, requeuing.")
 		return ctrl.Result{}, err
 	}
 
