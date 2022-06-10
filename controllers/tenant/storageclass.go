@@ -3,7 +3,9 @@ package tenant
 import (
 	"context"
 	"fmt"
+
 	csiprovisionerv1alpha1 "github.com/kubermatic/kubevirt-csi-driver-operator/api/v1alpha1"
+
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -17,7 +19,7 @@ const (
 func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alpha1.StorageClass) *storagev1.StorageClass {
 	return &storagev1.StorageClass{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("%s-kubevirt", storageClass.InfraStorageClassName),
+			Name: fmt.Sprintf("kubevirt-%s", storageClass.InfraStorageClassName),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(obj, csiprovisionerv1alpha1.GroupVersion.WithKind("Tenant")),
 			},
