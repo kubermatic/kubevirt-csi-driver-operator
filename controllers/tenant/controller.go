@@ -18,30 +18,28 @@ package tenant
 
 import (
 	"context"
+	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	csiprovisionerv1alpha1 "github.com/kubermatic/kubevirt-csi-driver-operator/api/v1alpha1"
 )
 
 const (
-	namespaceName          = "kubevirt-csi-driver"
-	tenantName             = "tenant"
-	infraClusterSecretName = "infra-cluster-credentials"
+	namespaceName     = "kubevirt-csi-driver"
+	tenantName        = "tenant"
+	csiDeploymentName = "kubevirt-csi-controller"
 )
 
 // TenantReconciler reconciles a Tenant object
@@ -53,18 +51,19 @@ type TenantReconciler struct {
 //+kubebuilder:rbac:groups=csiprovisioner.kubevirt.io,resources=tenants,verbs=get;list;watch
 //+kubebuilder:rbac:groups=csiprovisioner.kubevirt.io,resources=tenants/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=csiprovisioner.kubevirt.io,resources=tenants/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=delete
 
 //+kubebuilder:rbac:groups="",resources=persistentvolumes,verbs="*"
-//+kubebuilder:rbac:groups="",resources=nodes;persistentvolumeclaims;persistentvolumeclaims/status,verbs=get;list;watch;update;patch
-//+kubebuilder:rbac:groups="",resources=serviceaccounts;configmaps;secrets;events,verbs=get;list;watch;update;patch;create
+//+kubebuilder:rbac:groups="",resources=persistentvolumeclaims;persistentvolumeclaims/status,verbs=get;list;watch;update
 //+kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=clusterroles;clusterrolebindings,verbs=get;list;watch;update;patch;create
-//+kubebuilder:rbac:groups=extensions;apps,resources=deployments;daemonsets,verbs=get;list;watch;update;patch;create
-//+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses;csidrivers;volumeattachments;volumeattachments/status,verbs=get;list;watch;update;patch;create
+//+kubebuilder:rbac:groups="",resources=nodes,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=csidrivers,verbs=get;list;watch;update;patch;create
+//+kubebuilder:rbac:groups="",resources=serviceaccounts;events;configmaps,verbs=get;list;watch;update;patch;create
+//+kubebuilder:rbac:groups=extensions;apps,resources=daemonsets,verbs=get;list;watch;update;patch;create
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=volumeattachments/status,verbs=get;list;watch;update;patch
+//+kubebuilder:rbac:groups=storage.k8s.io,resources=storageclasses;,verbs=get;list;watch;create;update
 //+kubebuilder:rbac:groups=storage.k8s.io;csi.storage.k8s.io,resources=csinodes;csinodeinfos,verbs=get;list;watch
-//+kubebuilder:rbac:groups=storage.k8s.io;csi.storage.k8s.io,resources=csidrivers,verbs=get;list;watch;update;create
-//+kubebuilder:rbac:groups=snapshot.storage.k8s.io,resources=volumesnapshots;volumesnapshots/status,verbs=get;list;watch;update
-//+kubebuilder:rbac:groups=snapshot.storage.k8s.io,resources=volumesnapshotclasses,verbs=get;list;watch
-//+kubebuilder:rbac:groups=snapshot.storage.k8s.io,resources=volumesnapshotcontents,verbs="*"
 //+kubebuilder:rbac:groups=coordination.k8s.io,resources=leases,verbs="*"
 //+kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=create;list
 
@@ -85,23 +84,6 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 	objMeta := tenant.GetObjectMeta()
 
-	// wait for infra-credentials
-	infraCredentials := corev1.Secret{}
-	err = r.Get(ctx, client.ObjectKey{Name: infraClusterSecretName, Namespace: namespaceName}, &infraCredentials)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			l.Info("Waiting for infra-cluster-credentials secret to be created", "name", req.NamespacedName)
-			return ctrl.Result{}, nil
-		}
-		return ctrl.Result{}, err
-	}
-
-	_, err = r.reconcileConfigMap(ctx, objMeta, tenant.Spec.InfraClusterNamespace, tenant.Spec.InfraClusterLabels)
-	if err != nil {
-		l.Info("Error reconciling configMap, requeuing.")
-		return ctrl.Result{}, err
-	}
-
 	_, err = r.reconcileCSIDriver(ctx, objMeta)
 	if err != nil {
 		l.Info("Error reconciling csi driver, requeuing.")
@@ -120,16 +102,20 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	_, err = r.reconcileDeployment(ctx, objMeta, "", "")
-	if err != nil {
-		l.Info("Error reconciling deployment, requeuing.")
-		return ctrl.Result{}, err
-	}
-
 	err = r.reconcileStorageClasses(ctx, objMeta, tenant.Spec.StorageClasses)
 	if err != nil {
 		l.Info("Error reconciling storageClass, requeuing.")
 		return ctrl.Result{}, err
+	}
+
+	// Cleanup the Deployment that is not removed during migration from non-split to split deployment
+	err = r.Client.Delete(ctx, &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      csiDeploymentName,
+			Namespace: namespaceName,
+		}})
+	if err != nil && !apierrors.IsNotFound(err) {
+		return ctrl.Result{}, fmt.Errorf("failed to ensure deployment %s is removed/not present: %w", csiDeploymentName, err)
 	}
 
 	return ctrl.Result{}, nil
@@ -143,30 +129,10 @@ func (r *TenantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		},
 	}
 
-	filterSecrets := predicate.Funcs{
-		CreateFunc: func(event event.CreateEvent) bool {
-			return event.Object.GetName() == infraClusterSecretName
-		},
-	}
-
-	mapEvents := func(obj client.Object) []reconcile.Request {
-		return []reconcile.Request{
-			{
-				NamespacedName: types.NamespacedName{
-					Name: tenantName,
-				},
-			},
-		}
-	}
-
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&csiprovisionerv1alpha1.Tenant{}, builder.WithPredicates(filterTenants)).
-		Owns(&corev1.ConfigMap{}).
 		Owns(&storagev1.CSIDriver{}).
 		Owns(&appsv1.DaemonSet{}).
-		Owns(&appsv1.Deployment{}).
 		Owns(&storagev1.StorageClass{}).
-		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(mapEvents),
-			builder.WithPredicates(filterSecrets)).
 		Complete(r)
 }
