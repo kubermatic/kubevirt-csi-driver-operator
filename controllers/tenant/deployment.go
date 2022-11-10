@@ -58,8 +58,7 @@ func getDesiredDeployment(obj metav1.Object, imageRepository, imageTag string) *
 						{
 							Name:            "csi-driver",
 							ImagePullPolicy: corev1.PullAlways,
-							// TODO: change to image repository and tag
-							Image: "quay.io/kubevirt/csi-driver:latest",
+							Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
 							Args: []string{
 								"--endpoint=$(CSI_ENDPOINT)",
 								"--namespace=kubevirt-csi-driver",
@@ -131,8 +130,7 @@ func getDesiredDeployment(obj metav1.Object, imageRepository, imageTag string) *
 						{
 							Name:            "csi-provisioner",
 							ImagePullPolicy: corev1.PullAlways,
-							// TODO: change to image repository and tag
-							Image: "quay.io/openshift/origin-csi-external-provisioner:latest",
+							Image:           "quay.io/openshift/origin-csi-external-provisioner:4.13.0",
 							Args: []string{
 								"--csi-address=$(ADDRESS)",
 								"--default-fstype=ext4",
@@ -160,8 +158,7 @@ func getDesiredDeployment(obj metav1.Object, imageRepository, imageTag string) *
 						{
 							Name:            "csi-attacher",
 							ImagePullPolicy: corev1.PullAlways,
-							// TODO: change to image repository and tag
-							Image: "quay.io/openshift/origin-csi-external-attacher:latest",
+							Image:           "quay.io/openshift/origin-csi-external-attacher:4.13.0",
 							Args: []string{
 								"--csi-address=$(ADDRESS)",
 								"--v=5",
@@ -188,8 +185,7 @@ func getDesiredDeployment(obj metav1.Object, imageRepository, imageTag string) *
 						{
 							Name:            "csi-liveness-probe",
 							ImagePullPolicy: corev1.PullAlways,
-							// TODO: change to image repository and tag
-							Image: "quay.io/openshift/origin-csi-livenessprobe:latest",
+							Image:           "quay.io/openshift/origin-csi-livenessprobe:4.13.0",
 							Args: []string{
 								"--csi-address=/csi/csi.sock",
 								"--probe-timeout=3s",
