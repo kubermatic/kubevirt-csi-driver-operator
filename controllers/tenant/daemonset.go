@@ -61,12 +61,11 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 						{
 							Name: "csi-driver",
 							SecurityContext: &corev1.SecurityContext{
-								Privileged:               pointer.BoolPtr(true),
-								AllowPrivilegeEscalation: pointer.BoolPtr(true),
+								Privileged:               pointer.Bool(true),
+								AllowPrivilegeEscalation: pointer.Bool(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							// TODO: change to image repository and tag
-							Image: "quay.io/kubevirt/csi-driver:latest",
+							Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
 							Args: []string{
 								"--endpoint=unix:/csi/csi.sock",
 								"--namespace=kubevirt-csi-driver",
@@ -161,8 +160,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 								Privileged: pointer.BoolPtr(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							// TODO: change to image repository and tag
-							Image: "quay.io/openshift/origin-csi-node-driver-registrar:latest",
+							Image:           "quay.io/openshift/origin-csi-node-driver-registrar:4.13.0",
 							Args: []string{
 								"--csi-address=$(ADDRESS)",
 								"--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)",
@@ -207,8 +205,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 						{
 							Name:            "csi-liveness-probe",
 							ImagePullPolicy: corev1.PullAlways,
-							// TODO: change to image repository and tag
-							Image: "quay.io/openshift/origin-csi-livenessprobe:latest",
+							Image:           "quay.io/openshift/origin-csi-livenessprobe:4.13.0",
 							Args: []string{
 								"--csi-address=/csi/csi.sock",
 								"--probe-timeout=3s",
