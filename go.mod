@@ -1,9 +1,8 @@
-module kubevirt-csi-driver-operator
+module github.com/kubermatic/kubevirt-csi-driver-operator
 
 go 1.19
 
 require (
-	github.com/kubermatic/kubevirt-csi-driver-operator v0.1.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.23.0
 	k8s.io/api v0.25.3
