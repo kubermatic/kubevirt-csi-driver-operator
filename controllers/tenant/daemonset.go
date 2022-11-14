@@ -68,10 +68,9 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 							Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
 							Args: []string{
 								"--endpoint=unix:/csi/csi.sock",
-								"--namespace=kubevirt-csi-driver",
 								"--node-name=$(KUBE_NODE_NAME)",
-								"--infra-cluster-namespace=$(INFRACLUSTER_NAMESPACE)",
-								"--infra-cluster-kubeconfig=/var/run/secrets/infracluster/kubeconfig",
+								"--run-node-service=true",
+								"--run-controller-service=false",
 							},
 							Env: []corev1.EnvVar{
 								{
@@ -82,34 +81,8 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 										},
 									},
 								},
-								{
-									Name: "INFRACLUSTER_NAMESPACE",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "driver-config",
-											},
-											Key: "infraClusterNamespace",
-										},
-									},
-								},
-								{
-									Name: "INFRACLUSTER_LABELS",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{
-												Name: "driver-config",
-											},
-											Key: "infraClusterLabels",
-										},
-									},
-								},
 							},
 							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "infracluster",
-									MountPath: "/var/run/secrets/infracluster",
-								},
 								{
 									Name:             "kubelet-dir",
 									MountPath:        "/var/lib/kubelet",
@@ -226,14 +199,6 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 						},
 					},
 					Volumes: []corev1.Volume{
-						{
-							Name: "infracluster",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: infraClusterSecretName,
-								},
-							},
-						},
 						{
 							Name: "kubelet-dir",
 							VolumeSource: corev1.VolumeSource{

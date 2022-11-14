@@ -10,7 +10,6 @@ rules:
   resources:
   - configmaps
   - events
-  - secrets
   - serviceaccounts
   verbs:
   - create
@@ -23,12 +22,20 @@ rules:
   - ""
   resources:
   - nodes
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - persistentvolumeclaims
   - persistentvolumeclaims/status
   verbs:
   - get
   - list
-  - patch
   - update
   - watch
 - apiGroups:
@@ -46,10 +53,15 @@ rules:
   - list
 - apiGroups:
   - apps
+  resources:
+  - deployments
+  verbs:
+  - delete
+- apiGroups:
+  - apps
   - extensions
   resources:
   - daemonsets
-  - deployments
   verbs:
   - create
   - get
@@ -63,17 +75,6 @@ rules:
   - leases
   verbs:
   - '*'
-- apiGroups:
-  - csi.storage.k8s.io
-  - storage.k8s.io
-  resources:
-  - csidrivers
-  verbs:
-  - create
-  - get
-  - list
-  - update
-  - watch
 - apiGroups:
   - csi.storage.k8s.io
   - storage.k8s.io
@@ -119,25 +120,22 @@ rules:
   - update
   - watch
 - apiGroups:
-  - snapshot.storage.k8s.io
+  - storage.k8s.io
   resources:
-  - volumesnapshotclasses
+  - csidrivers
   verbs:
+  - create
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
-  - snapshot.storage.k8s.io
+  - storage.k8s.io
   resources:
-  - volumesnapshotcontents
+  - storageclasses
   verbs:
-  - '*'
-- apiGroups:
-  - snapshot.storage.k8s.io
-  resources:
-  - volumesnapshots
-  - volumesnapshots/status
-  verbs:
+  - create
   - get
   - list
   - update
@@ -145,12 +143,18 @@ rules:
 - apiGroups:
   - storage.k8s.io
   resources:
-  - csidrivers
-  - storageclasses
   - volumeattachments
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
   - volumeattachments/status
   verbs:
-  - create
   - get
   - list
   - patch
