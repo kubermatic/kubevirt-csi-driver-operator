@@ -61,7 +61,6 @@ func getDesiredDeployment(obj metav1.Object, imageRepository, imageTag string) *
 							Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
 							Args: []string{
 								"--endpoint=$(CSI_ENDPOINT)",
-								"--namespace=kubevirt-csi-driver",
 								"--infra-cluster-namespace=$(INFRACLUSTER_NAMESPACE)",
 								"--infra-cluster-kubeconfig=/var/run/secrets/infracluster/kubeconfig",
 								"--infra-cluster-labels=$(INFRACLUSTER_LABELS)",

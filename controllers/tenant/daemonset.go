@@ -68,7 +68,6 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 							Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
 							Args: []string{
 								"--endpoint=unix:/csi/csi.sock",
-								"--namespace=kubevirt-csi-driver",
 								"--node-name=$(KUBE_NODE_NAME)",
 								"--infra-cluster-namespace=$(INFRACLUSTER_NAMESPACE)",
 								"--infra-cluster-kubeconfig=/var/run/secrets/infracluster/kubeconfig",
