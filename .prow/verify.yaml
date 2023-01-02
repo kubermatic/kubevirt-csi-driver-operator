@@ -23,6 +23,11 @@ presubmits:
       containers:
         - image: quay.io/kubermatic-labs/boilerplate:v0.2.0
           command:
-            - make
-          args:
-            - verify-boilerplate
+            - "./hack/verify-boilerplate.sh"
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 50m
+            limits:
+              memory: 256Mi
+              cpu: 250m
