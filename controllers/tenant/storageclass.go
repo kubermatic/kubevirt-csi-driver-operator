@@ -19,6 +19,7 @@ package tenant
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	csiprovisionerv1alpha1 "github.com/kubermatic/kubevirt-csi-driver-operator/api/v1alpha1"
 
@@ -29,7 +30,8 @@ import (
 )
 
 const (
-	provisioner = "csi.kubevirt.io"
+	provisioner                        = "csi.kubevirt.io"
+	isDefaultStorageClassannotationKey = "storageclass.kubernetes.io/is-default-class"
 )
 
 func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alpha1.StorageClass) *storagev1.StorageClass {
@@ -39,9 +41,14 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(obj, csiprovisionerv1alpha1.GroupVersion.WithKind("Tenant")),
 			},
+			Annotations: map[string]string{
+				isDefaultStorageClassannotationKey: strconv.FormatBool(storageClass.IsDefaultClass != nil && *storageClass.IsDefaultClass),
+			},
 		},
 		Provisioner: provisioner,
-		Parameters:  map[string]string{"infraStorageClassName": storageClass.InfraStorageClassName, "bus": storageClass.Bus},
+		Parameters: map[string]string{
+			"infraStorageClassName": storageClass.InfraStorageClassName,
+			"bus":                   storageClass.Bus},
 	}
 }
 
@@ -52,6 +59,7 @@ func (r *TenantReconciler) reconcileStorageClasses(ctx context.Context, obj meta
 		desiredStorageClass := getDesiredStorageClass(obj, storageClass)
 		currentStorageClass := desiredStorageClass.DeepCopyObject().(*storagev1.StorageClass)
 		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, currentStorageClass, func() error {
+			currentStorageClass.Annotations = desiredStorageClass.Annotations
 			currentStorageClass.OwnerReferences = desiredStorageClass.OwnerReferences
 			currentStorageClass.Parameters = desiredStorageClass.Parameters
 			return nil
