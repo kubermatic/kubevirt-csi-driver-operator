@@ -41,13 +41,6 @@ spec:
               imageTag:
                 description: Image tag that should be used for all csi driver components
                 type: string
-              infraClusterLabels:
-                description: The driver creates resources in the infra cluster. These
-                  resources are labeled with the values you supply in infraClusterLabels.
-                type: string
-              infraClusterNamespace:
-                description: Set infraClusterNamespace to the KubeVirt cluster namespace.
-                type: string
               storageClasses:
                 description: StorageClasses represents storage classes that the tenant
                   operator should create.
@@ -62,13 +55,16 @@ spec:
                       description: Name of the storage class to use on the infrastructure
                         cluster.
                       type: string
+                    isDefaultClass:
+                      description: 'Optional: IsDefaultClass if true, the created
+                        StorageClass will be annotated with: storageclass.kubernetes.io/is-default-class
+                        : true If missing or false, annotation will be: storageclass.kubernetes.io/is-default-class
+                        : false'
+                      type: boolean
                   required:
                   - infraStorageClassName
                   type: object
                 type: array
-            required:
-            - infraClusterLabels
-            - infraClusterNamespace
             type: object
           status:
             description: TenantStatus defines the observed state of Tenant.

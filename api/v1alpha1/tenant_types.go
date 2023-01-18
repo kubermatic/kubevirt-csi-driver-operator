@@ -25,6 +25,11 @@ import (
 type StorageClass struct {
 	// Name of the storage class to use on the infrastructure cluster.
 	InfraStorageClassName string `json:"infraStorageClassName"`
+	// Optional: IsDefaultClass if true, the created StorageClass will be annotated with:
+	// storageclass.kubernetes.io/is-default-class : true
+	// If missing or false, annotation will be:
+	// storageclass.kubernetes.io/is-default-class : false
+	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
 	// The VM bus type, defaults to scsi.
 	// +optional
 	Bus string `json:"bus,omitempty"`
@@ -32,12 +37,6 @@ type StorageClass struct {
 
 // TenantSpec defines the desired state of Tenant.
 type TenantSpec struct {
-	// Set infraClusterNamespace to the KubeVirt cluster namespace.
-	InfraClusterNamespace string `json:"infraClusterNamespace"`
-	// The driver creates resources in the infra cluster.
-	// These resources are labeled with the values you supply in infraClusterLabels.
-	InfraClusterLabels string `json:"infraClusterLabels"`
-
 	// Image repository address
 	ImageRepository string `json:"imageRepository,omitempty"`
 	// Image tag that should be used for all csi driver components

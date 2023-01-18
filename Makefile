@@ -14,7 +14,7 @@
 
 
 # Image URL to use all building/pushing image targets
-IMG ?= quay.io/kubermatic/kubevirt-csi-driver-operator:v0.2.0
+IMG ?= quay.io/kubermatic/kubevirt-csi-driver-operator:v0.3.0
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.25.0
 
@@ -58,7 +58,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 
 .PHONY: generate
 generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="./hack/boilerplate/boilerplate.go.txt" paths="./..." output:stdout
+	$(CONTROLLER_GEN) object:headerFile="./hack/boilerplate/boilerplate.go.txt" paths="./..."
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
