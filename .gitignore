@@ -15,3 +15,8 @@
 vendor/
 .idea
 bin/
+
+# Misc
+ginkgo.report
+download-gocache
+.envrc

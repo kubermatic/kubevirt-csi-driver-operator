@@ -34,10 +34,14 @@ const (
 	isDefaultStorageClassannotationKey = "storageclass.kubernetes.io/is-default-class"
 )
 
+func getUserClusterStorageClassName(infraStorageClassName string) string {
+	return fmt.Sprintf("kubevirt-%s", infraStorageClassName)
+}
+
 func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alpha1.StorageClass) *storagev1.StorageClass {
-	return &storagev1.StorageClass{
+	sc := &storagev1.StorageClass{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: fmt.Sprintf("kubevirt-%s", storageClass.InfraStorageClassName),
+			Name: getUserClusterStorageClassName(storageClass.InfraStorageClassName),
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(obj, csiprovisionerv1alpha1.GroupVersion.WithKind("Tenant")),
 			},
@@ -48,25 +52,31 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 		Provisioner: provisioner,
 		Parameters: map[string]string{
 			"infraStorageClassName": storageClass.InfraStorageClassName,
-			"bus":                   storageClass.Bus},
+		},
 	}
+	if len(storageClass.Bus) > 0 {
+		sc.Parameters["bus"] = storageClass.Bus
+	}
+	return sc
 }
 
 func (r *TenantReconciler) reconcileStorageClasses(ctx context.Context, obj metav1.Object, storageClasses []csiprovisionerv1alpha1.StorageClass) error {
 	l := log.FromContext(ctx).WithName("storageClass")
 	l.Info("Reconciling storageClass")
+	var rerr error
 	for _, storageClass := range storageClasses {
 		desiredStorageClass := getDesiredStorageClass(obj, storageClass)
 		currentStorageClass := desiredStorageClass.DeepCopyObject().(*storagev1.StorageClass)
 		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, currentStorageClass, func() error {
 			currentStorageClass.Annotations = desiredStorageClass.Annotations
 			currentStorageClass.OwnerReferences = desiredStorageClass.OwnerReferences
+			currentStorageClass.Provisioner = desiredStorageClass.Provisioner
 			currentStorageClass.Parameters = desiredStorageClass.Parameters
 			return nil
-
 		}); err != nil {
-			return err
+			rerr = fmt.Errorf("%w", err)
+			continue
 		}
 	}
-	return nil
+	return rerr
 }

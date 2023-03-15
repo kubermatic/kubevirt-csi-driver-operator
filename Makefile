@@ -16,7 +16,7 @@
 # Image URL to use all building/pushing image targets
 IMG ?= quay.io/kubermatic/kubevirt-csi-driver-operator:v0.3.0
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.25.0
+ENVTEST_K8S_VERSION = 1.26.0
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -68,15 +68,31 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
+.PHONY: test-integration
+test-integration: 
+	./hack/run-integration-tests.sh
+
+.PHONY: clean-test-cache
+clean-test-cache:
+	go clean -testcache
+
+.PHONY: local-test-integration
+local-test-integration:
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" ./hack/run-integration-tests.sh	
+
+.PHONY: build-tests
+build-tests:
+	go test -tags integration -run nope ./api/... ./controllers/...
 
 ##@ Build
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go
+
+.PHONY: clean
+clean:
+	rm bin/manager
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
@@ -146,8 +162,8 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.5
-CONTROLLER_TOOLS_VERSION ?= v0.9.2
+KUSTOMIZE_VERSION ?= v5.0.0
+CONTROLLER_TOOLS_VERSION ?= v0.11.3
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize

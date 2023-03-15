@@ -30,13 +30,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	csiprovisionerv1alpha1 "github.com/kubermatic/kubevirt-csi-driver-operator/api/v1alpha1"
+	"github.com/kubermatic/kubevirt-csi-driver-operator/registry"
 )
 
 const (
 	csiDaemonSetName = "kubevirt-csi-node"
+	defaultRegistry  = "quay.io"
+	// tag can be overwritten by tenant.CSIDriverTag
+	// registry can be overwritten by tenant.ImageRepository
+	csiDriverImage = defaultRegistry + "/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f"
+	// For csiNodeDriveRegistrarImage and csiLivenessProbeImage
+	// tag can be overwritten by CSISidecarTag
+	// registry can be overwritten by tenant.ImageRepository
+	csiNodeDriveRegistrarImage = defaultRegistry + "/openshift/origin-csi-node-driver-registrar:4.13.0"
+	csiLivenessProbeImage      = defaultRegistry + "/openshift/origin-csi-livenessprobe:4.13.0"
 )
 
-func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *appsv1.DaemonSet {
+func getDesiredDaemonSet(obj metav1.Object, imageRepository, csiDriverTag, csiSidecarTag string) *appsv1.DaemonSet {
 	mountPropagationBidirectional := corev1.MountPropagationBidirectional
 	hostPathDirectory := corev1.HostPathDirectory
 	hostPathDirectoryOrCreate := corev1.HostPathDirectoryOrCreate
@@ -81,7 +91,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 								AllowPrivilegeEscalation: pointer.Bool(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
+							Image:           registry.Must(registry.RewriteImage(csiDriverImage, defaultRegistry, imageRepository, csiDriverTag)),
 							Args: []string{
 								"--endpoint=unix:/csi/csi.sock",
 								"--node-name=$(KUBE_NODE_NAME)",
@@ -149,7 +159,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 								Privileged: pointer.BoolPtr(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           "quay.io/openshift/origin-csi-node-driver-registrar:4.13.0",
+							Image:           registry.Must(registry.RewriteImage(csiNodeDriveRegistrarImage, defaultRegistry, imageRepository, csiSidecarTag)),
 							Args: []string{
 								"--csi-address=$(ADDRESS)",
 								"--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)",
@@ -194,7 +204,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 						{
 							Name:            "csi-liveness-probe",
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           "quay.io/openshift/origin-csi-livenessprobe:4.13.0",
+							Image:           registry.Must(registry.RewriteImage(csiLivenessProbeImage, defaultRegistry, imageRepository, csiSidecarTag)),
 							Args: []string{
 								"--csi-address=/csi/csi.sock",
 								"--probe-timeout=3s",
@@ -266,11 +276,11 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 	}
 }
 
-func (r *TenantReconciler) reconcileDaemonset(ctx context.Context, obj metav1.Object, imageRepository, imageTag string) (controllerutil.OperationResult, error) {
+func (r *TenantReconciler) reconcileDaemonset(ctx context.Context, obj metav1.Object, imageRepository, csiDriverTag, csiSidecarTag string) (controllerutil.OperationResult, error) {
 	l := log.FromContext(ctx).WithName("daemonset")
 	l.Info("Reconciling daemonset", "name", csiDaemonSetName)
 
-	desiredDaemonSetObj := getDesiredDaemonSet(obj, "", "")
+	desiredDaemonSetObj := getDesiredDaemonSet(obj, imageRepository, csiDriverTag, csiSidecarTag)
 	currentDaemonSetObj := desiredDaemonSetObj.DeepCopyObject().(*appsv1.DaemonSet)
 	return ctrl.CreateOrUpdate(ctx, r.Client, currentDaemonSetObj, func() error {
 		currentDaemonSetObj.OwnerReferences = desiredDaemonSetObj.OwnerReferences

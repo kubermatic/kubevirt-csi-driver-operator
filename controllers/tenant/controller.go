@@ -71,6 +71,7 @@ type TenantReconciler struct {
 // move the current state of the cluster closer to the desired state.
 func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	l := log.FromContext(ctx)
+	l.Info("Reconciling Tenant", "name", req.Name)
 
 	tenant := csiprovisionerv1alpha1.Tenant{}
 	err := r.Client.Get(ctx, req.NamespacedName, &tenant)
@@ -96,7 +97,8 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	_, err = r.reconcileDaemonset(ctx, objMeta, "", "")
+	_, err = r.reconcileDaemonset(ctx, objMeta,
+		tenant.Spec.ImageRepository, tenant.Spec.CSIDriverTag, tenant.Spec.CSISidecarTag)
 	if err != nil {
 		l.Info("Error reconciling daemonset, requeuing.")
 		return ctrl.Result{}, err
@@ -125,6 +127,12 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 func (r *TenantReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	filterTenants := predicate.Funcs{
 		CreateFunc: func(event event.CreateEvent) bool {
+			return event.Object.GetName() == tenantName
+		},
+		UpdateFunc: func(event event.UpdateEvent) bool {
+			return event.ObjectNew.GetName() == tenantName
+		},
+		DeleteFunc: func(event event.DeleteEvent) bool {
 			return event.Object.GetName() == tenantName
 		},
 	}

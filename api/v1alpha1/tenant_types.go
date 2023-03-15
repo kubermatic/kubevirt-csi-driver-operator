@@ -37,11 +37,17 @@ type StorageClass struct {
 
 // TenantSpec defines the desired state of Tenant.
 type TenantSpec struct {
-	// Image repository address
+	// Optional: Image repository address
+	// +optional
 	ImageRepository string `json:"imageRepository,omitempty"`
-	// Image tag that should be used for all csi driver components
-	ImageTag string `json:"imageTag,omitempty"`
-	// StorageClasses represents storage classes that the tenant operator should create.
+	// Optional: CSIDriverTag tag that should be used for all csi driver components
+	// +optional
+	CSIDriverTag string `json:"csiDriverTag,omitempty"`
+	// Optional: CSISidecarTag represents a tag for Kubernetes CSI Sidecar Containers that are a set of standard containers
+	// that aim to simplify the development and deployment of CSI Drivers on Kubernetes.
+	// +optional
+	CSISidecarTag string `json:"csiSidecarTag,omitempty"`
+	// Optional: StorageClasses represents storage classes that the tenant operator should create.
 	// +optional
 	StorageClasses []StorageClass `json:"storageClasses,omitempty"`
 }

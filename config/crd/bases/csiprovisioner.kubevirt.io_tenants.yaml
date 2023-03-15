@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.9.2
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: tenants.csiprovisioner.kubevirt.io
 spec:
@@ -35,15 +35,22 @@ spec:
           spec:
             description: TenantSpec defines the desired state of Tenant.
             properties:
-              imageRepository:
-                description: Image repository address
+              csiDriverTag:
+                description: 'Optional: CSIDriverTag tag that should be used for all
+                  csi driver components'
                 type: string
-              imageTag:
-                description: Image tag that should be used for all csi driver components
+              csiSidecarTag:
+                description: 'Optional: CSISidecarTag represents a tag for Kubernetes
+                  CSI Sidecar Containers that are a set of standard containers that
+                  aim to simplify the development and deployment of CSI Drivers on
+                  Kubernetes.'
+                type: string
+              imageRepository:
+                description: 'Optional: Image repository address'
                 type: string
               storageClasses:
-                description: StorageClasses represents storage classes that the tenant
-                  operator should create.
+                description: 'Optional: StorageClasses represents storage classes
+                  that the tenant operator should create.'
                 items:
                   description: StorageClass represents a storage class that should
                     reference a KubeVirt storage class on infra cluster.

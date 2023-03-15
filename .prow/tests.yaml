@@ -1,0 +1,37 @@
+# Copyright 2023 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+presubmits:
+  - name: pre-kubevirt-csi-driver-operator-test-integration
+    run_if_changed: "^(cmd|codegen|hack|pkg)/"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubevirt-csi-driver-operator.git"
+    labels:
+      preset-docker-mirror: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/integration-tests:8-1
+          command:
+            - make
+            - test-integration
+          # docker-in-docker (for localstack) needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+              cpu: 2

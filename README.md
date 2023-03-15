@@ -44,8 +44,27 @@ Fetch operator manifest
 bin/kustomize build config/default
 ```
 
-## Run tests
+## Run integration tests
+Integration tests are using testEnv.  
+Please read this [Configuring envtest for integration tests](https://book.kubebuilder.io/reference/envtest.html) to setup your env.  
+
+1- To install testenv
 ```shell
-make test
+make envtest
 ```
+
+2- To run locally (not in ci) the integration tests
+```shell
+make local-test-integration
+```
+That will:
+- copy the needed envtest binaries (etcd, kube-apiserver, kubectl) in your $LOCALBIN folder
+- set KUBEBUILDER_ASSETS to point there
+- run the integration tests
+
+Note that there is:
+```shell
+make clean-test-cache
+```
+to clean to test cache.
 
