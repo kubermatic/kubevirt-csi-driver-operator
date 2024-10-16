@@ -81,7 +81,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRepository, imageTag string) *a
 								AllowPrivilegeEscalation: pointer.Bool(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           "quay.io/kubermatic/kubevirt-csi-driver:cc71b72b8d5a205685985244c61707c5e40c9d5f",
+							Image:           "quay.io/kubermatic/kubevirt-csi-driver:35836e0c8b68d9916d29a838ea60cdd3fc6199cf",
 							Args: []string{
 								"--endpoint=unix:/csi/csi.sock",
 								"--node-name=$(KUBE_NODE_NAME)",
