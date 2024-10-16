@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -33,6 +34,9 @@ type StorageClass struct {
 	// The VM bus type, defaults to scsi.
 	// +optional
 	Bus string `json:"bus,omitempty"`
+	// VolumeBindingMode indicates how PersistentVolumeClaims should be provisioned and bound. When unset,
+	// VolumeBindingImmediate is used.
+	VolumeBindingMode *storagev1.VolumeBindingMode `json:"volumeBindingMode,omitempty"`
 }
 
 // TenantSpec defines the desired state of Tenant.
