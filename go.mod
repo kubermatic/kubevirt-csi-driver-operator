@@ -1,6 +1,6 @@
 module github.com/kubermatic/kubevirt-csi-driver-operator
 
-go 1.19
+go 1.22.4
 
 require (
 	github.com/onsi/ginkgo v1.16.5

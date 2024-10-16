@@ -49,6 +49,7 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 		Parameters: map[string]string{
 			"infraStorageClassName": storageClass.InfraStorageClassName,
 			"bus":                   storageClass.Bus},
+		VolumeBindingMode: storageClass.VolumeBindingMode,
 	}
 }
 
@@ -62,6 +63,7 @@ func (r *TenantReconciler) reconcileStorageClasses(ctx context.Context, obj meta
 			currentStorageClass.Annotations = desiredStorageClass.Annotations
 			currentStorageClass.OwnerReferences = desiredStorageClass.OwnerReferences
 			currentStorageClass.Parameters = desiredStorageClass.Parameters
+			currentStorageClass.VolumeBindingMode = desiredStorageClass.VolumeBindingMode
 			return nil
 
 		}); err != nil {
