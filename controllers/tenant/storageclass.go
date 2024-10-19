@@ -44,6 +44,7 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 			Annotations: map[string]string{
 				isDefaultStorageClassannotationKey: strconv.FormatBool(storageClass.IsDefaultClass != nil && *storageClass.IsDefaultClass),
 			},
+			Labels: storageClass.Labels,
 		},
 		Provisioner: provisioner,
 		Parameters: map[string]string{
