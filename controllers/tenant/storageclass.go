@@ -23,6 +23,7 @@ import (
 
 	csiprovisionerv1alpha1 "github.com/kubermatic/kubevirt-csi-driver-operator/api/v1alpha1"
 
+	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,6 +52,20 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 			"infraStorageClassName": storageClass.InfraStorageClassName,
 			"bus":                   storageClass.Bus},
 		VolumeBindingMode: storageClass.VolumeBindingMode,
+		AllowedTopologies: []corev1.TopologySelectorTerm{
+			{
+				MatchLabelExpressions: []corev1.TopologySelectorLabelRequirement{
+					{
+						Key:    "topology.kubernetes.io/zone",
+						Values: storageClass.Zones,
+					},
+					{
+						Key:    "topology.kubernetes.io/region",
+						Values: storageClass.Regions,
+					},
+				},
+			},
+		},
 	}
 }
 
