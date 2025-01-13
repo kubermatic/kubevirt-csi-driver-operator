@@ -42,7 +42,7 @@ var _ = Describe("Reconcile storageClass", func() {
 		})
 
 		It("should get created", func() {
-			testTenant := createTestTenant([]v1alpha1.StorageClass{{InfraStorageClassName: "test-local-path-1", Bus: "scsi"}, {InfraStorageClassName: "test-local-path-2", Bus: "scsi"}})
+			testTenant := createTestTenant([]v1alpha1.StorageClass{{InfraStorageClassName: "test-local-path-1", Bus: "scsi", Zones: []string{"r1a", "r2a"}, Regions: []string{"r1", "r2"}}, {InfraStorageClassName: "test-local-path-2", Bus: "scsi"}})
 			Expect(testReconcile.reconcileStorageClasses(context.TODO(), testTenant.GetObjectMeta(), testTenant.Spec.StorageClasses)).NotTo(HaveOccurred())
 			scList := v1.StorageClassList{}
 			Expect(testClient.List(context.TODO(), &scList)).NotTo(HaveOccurred())

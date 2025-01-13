@@ -36,7 +36,7 @@ const (
 )
 
 func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alpha1.StorageClass) *storagev1.StorageClass {
-	return &storagev1.StorageClass{
+	sc := &storagev1.StorageClass{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: fmt.Sprintf("kubevirt-%s", storageClass.InfraStorageClassName),
 			OwnerReferences: []metav1.OwnerReference{
@@ -52,21 +52,36 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 			"infraStorageClassName": storageClass.InfraStorageClassName,
 			"bus":                   storageClass.Bus},
 		VolumeBindingMode: storageClass.VolumeBindingMode,
-		AllowedTopologies: []corev1.TopologySelectorTerm{
-			{
-				MatchLabelExpressions: []corev1.TopologySelectorLabelRequirement{
-					{
-						Key:    "topology.kubernetes.io/zone",
-						Values: storageClass.Zones,
-					},
-					{
-						Key:    "topology.kubernetes.io/region",
-						Values: storageClass.Regions,
-					},
+	}
+
+	var allowedTopologies []corev1.TopologySelectorTerm
+	if len(storageClass.Zones) > 0 {
+		allowedTopology := corev1.TopologySelectorTerm{
+			MatchLabelExpressions: []corev1.TopologySelectorLabelRequirement{
+				{
+					Key:    "topology.kubernetes.io/zone",
+					Values: storageClass.Zones,
 				},
 			},
-		},
+		}
+		allowedTopologies = append(allowedTopologies, allowedTopology)
 	}
+
+	if len(storageClass.Regions) > 0 {
+		allowedTopology := corev1.TopologySelectorTerm{
+			MatchLabelExpressions: []corev1.TopologySelectorLabelRequirement{
+				{
+					Key:    "topology.kubernetes.io/region",
+					Values: storageClass.Regions,
+				},
+			},
+		}
+		allowedTopologies = append(allowedTopologies, allowedTopology)
+	}
+
+	sc.AllowedTopologies = allowedTopologies
+
+	return sc
 }
 
 func (r *TenantReconciler) reconcileStorageClasses(ctx context.Context, obj metav1.Object, storageClasses []csiprovisionerv1alpha1.StorageClass) error {
