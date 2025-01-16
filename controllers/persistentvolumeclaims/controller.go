@@ -26,7 +26,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const ControllerName = "persistent-volume-claims-controller"
+const (
+	provisioner    = "csi.kubevirt.io"
+	ControllerName = "persistent-volume-claims-controller"
+)
 
 type Reconciler struct {
 	client.Client

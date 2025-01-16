@@ -18,13 +18,25 @@ package persistentvolumeclaims
 
 import (
 	"context"
+	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
+	storagev1 "k8s.io/api/storage/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (r *Reconciler) reconcilePVCs(ctx context.Context, pvc *corev1.PersistentVolumeClaim) error {
-	if pvc.Status.Phase == corev1.ClaimBound {
+	storageClassName := pvc.Spec.StorageClassName
+	if storageClassName == nil {
+		return fmt.Errorf("storageClassName is nil for pvc %s is empty", pvc.Name)
+	}
+
+	sc := storagev1.StorageClass{}
+	if err := r.Get(ctx, client.ObjectKey{Name: *storageClassName}, &sc); err != nil {
+		return fmt.Errorf("failed to get storage class %s: %w", *storageClassName, err)
+	}
+
+	if pvc.Status.Phase == corev1.ClaimBound && sc.Provisioner == provisioner {
 		assignedNodeName := pvc.Annotations["volume.kubernetes.io/selected-node"]
 		assignedNode := &corev1.Node{}
 		if err := r.Client.Get(ctx, client.ObjectKey{Name: assignedNodeName}, assignedNode); err != nil {
@@ -77,5 +89,6 @@ func (r *Reconciler) reconcilePVCs(ctx context.Context, pvc *corev1.PersistentVo
 			return err
 		}
 	}
+
 	return nil
 }
