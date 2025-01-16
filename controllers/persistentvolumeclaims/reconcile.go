@@ -36,8 +36,11 @@ func (r *Reconciler) reconcilePVCs(ctx context.Context, pvc *corev1.PersistentVo
 		return fmt.Errorf("failed to get storage class %s: %w", *storageClassName, err)
 	}
 
-	if pvc.Status.Phase == corev1.ClaimBound && sc.Provisioner == provisioner {
-		assignedNodeName := pvc.Annotations["volume.kubernetes.io/selected-node"]
+	// if the annotation 'volume.kubernetes.io/selected-node' is not set, the PV node affinity setting should
+	// be ignored as this volume doesn't have a zone/region aware topologies.
+	assignedNodeName := pvc.Annotations["volume.kubernetes.io/selected-node"]
+
+	if pvc.Status.Phase == corev1.ClaimBound && sc.Provisioner == provisioner && assignedNodeName != "" {
 		assignedNode := &corev1.Node{}
 		if err := r.Client.Get(ctx, client.ObjectKey{Name: assignedNodeName}, assignedNode); err != nil {
 			return err
@@ -82,11 +85,11 @@ func (r *Reconciler) reconcilePVCs(ctx context.Context, pvc *corev1.PersistentVo
 					NodeSelectorTerms: nodeSelectorTerms,
 				},
 			}
-		}
 
-		pv = pv.DeepCopy()
-		if err := r.Client.Update(ctx, pv); err != nil {
-			return err
+			pv = pv.DeepCopy()
+			if err := r.Client.Update(ctx, pv); err != nil {
+				return err
+			}
 		}
 	}
 
