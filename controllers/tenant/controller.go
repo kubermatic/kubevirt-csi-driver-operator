@@ -46,6 +46,8 @@ const (
 type TenantReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+
+	OverwriteRegistry string
 }
 
 //+kubebuilder:rbac:groups=csiprovisioner.kubevirt.io,resources=tenants,verbs=get;list;watch
