@@ -54,35 +54,32 @@ func (r *Reconciler) reconcilePVCs(ctx context.Context, pvc *corev1.PersistentVo
 			return err
 		}
 
-		var nodeSelectorTerms []corev1.NodeSelectorTerm
+		var matchExpressions []corev1.NodeSelectorRequirement
+
 		if zone != "" {
-			nodeSelectorTerms = append(nodeSelectorTerms, corev1.NodeSelectorTerm{
-				MatchExpressions: []corev1.NodeSelectorRequirement{
-					{
-						Key:      "topology.kubernetes.io/zone",
-						Operator: corev1.NodeSelectorOpIn,
-						Values:   []string{zone},
-					},
-				},
+			matchExpressions = append(matchExpressions, corev1.NodeSelectorRequirement{
+				Key:      "topology.kubernetes.io/zone",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{zone},
 			})
 		}
 
 		if region != "" {
-			nodeSelectorTerms = append(nodeSelectorTerms, corev1.NodeSelectorTerm{
-				MatchExpressions: []corev1.NodeSelectorRequirement{
-					{
-						Key:      "topology.kubernetes.io/region",
-						Operator: corev1.NodeSelectorOpIn,
-						Values:   []string{region},
-					},
-				},
+			matchExpressions = append(matchExpressions, corev1.NodeSelectorRequirement{
+				Key:      "topology.kubernetes.io/region",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{region},
 			})
 		}
 
-		if len(nodeSelectorTerms) > 0 {
+		if len(matchExpressions) > 0 {
 			pv.Spec.NodeAffinity = &corev1.VolumeNodeAffinity{
 				Required: &corev1.NodeSelector{
-					NodeSelectorTerms: nodeSelectorTerms,
+					NodeSelectorTerms: []corev1.NodeSelectorTerm{
+						{
+							MatchExpressions: matchExpressions,
+						},
+					},
 				},
 			}
 
