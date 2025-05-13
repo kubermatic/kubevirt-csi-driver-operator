@@ -87,7 +87,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRegistry, imageRepository, imag
 								AllowPrivilegeEscalation: pointer.Bool(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           registry.Must(registry.RewriteImage("kubermatic/kubevirt-csi-driver:35836e0c8b68d9916d29a838ea60cdd3fc6199cf", imageRegistry)),
+							Image:           registry.Must(registry.RewriteImage("kubermatic/kubevirt-csi-driver:9ad38f9e49c296acfe7b9d3301ebff8a1056fa68", imageRegistry)),
 							Args: []string{
 								"--endpoint=unix:/csi/csi.sock",
 								"--node-name=$(KUBE_NODE_NAME)",
@@ -155,7 +155,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRegistry, imageRepository, imag
 								Privileged: pointer.BoolPtr(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           registry.Must(registry.RewriteImage("openshift/origin-csi-node-driver-registrar:4.13.0", imageRegistry)),
+							Image:           registry.Must(registry.RewriteImage("openshift/origin-csi-node-driver-registrar:4.20.0", imageRegistry)),
 							Args: []string{
 								"--csi-address=$(ADDRESS)",
 								"--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)",
@@ -200,7 +200,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRegistry, imageRepository, imag
 						{
 							Name:            "csi-liveness-probe",
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           registry.Must(registry.RewriteImage("openshift/origin-csi-livenessprobe:4.13.0", imageRegistry)),
+							Image:           registry.Must(registry.RewriteImage("openshift/origin-csi-livenessprobe:4.20.0", imageRegistry)),
 							Args: []string{
 								"--csi-address=/csi/csi.sock",
 								"--probe-timeout=3s",

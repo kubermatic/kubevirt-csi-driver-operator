@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Build the manager binary
-FROM golang:1.22.5 as builder
+FROM golang:1.23.2 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -27,6 +27,7 @@ RUN go mod download
 COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
+COPY registry/ registry/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o manager main.go
