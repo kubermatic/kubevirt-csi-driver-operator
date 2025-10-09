@@ -87,7 +87,7 @@ func getDesiredDaemonSet(obj metav1.Object, imageRegistry, imageRepository, imag
 								AllowPrivilegeEscalation: pointer.Bool(true),
 							},
 							ImagePullPolicy: corev1.PullAlways,
-							Image:           registry.Must(registry.RewriteImage("kubermatic/kubevirt-csi-driver:9ad38f9e49c296acfe7b9d3301ebff8a1056fa68", imageRegistry)),
+							Image:           registry.Must(registry.RewriteImage("kubermatic/kubevirt-csi-driver:v0.4.5", imageRegistry)),
 							Args: []string{
 								"--endpoint=unix:/csi/csi.sock",
 								"--node-name=$(KUBE_NODE_NAME)",
