@@ -110,6 +110,12 @@ func (r *TenantReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	err = r.reconcileVolumeSnapshotClasses(ctx, objMeta, tenant.Spec.VolumeSnapshotClasses)
+	if err != nil {
+		l.Info("Error reconciling volumeSnapshotClass, requeuing.")
+		return ctrl.Result{}, err
+	}
+
 	// Cleanup the Deployment that is not removed during migration from non-split to split deployment
 	err = r.Client.Delete(ctx, &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

@@ -49,6 +49,20 @@ type StorageClass struct {
 	Regions []string `json:"regions,omitempty"`
 }
 
+// VolumeSnapshotClass contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
+// to initialise VolumeSnapshotClasses in the tenant cluster.
+type VolumeSnapshotClass struct {
+	// InfraVolumeSnapshotClass of the volume snapshot class to use on the infrastructure cluster.
+	InfraVolumeSnapshotClass string `json:"infraVolumeSnapshotClass"`
+	// Optional: IsDefaultClass. If true, the created VolumeSnapshotClass in the tenant cluster will be annotated with:
+	// snapshot.storage.kubernetes.io/is-default-class: true
+	// If missing or false, annotation will be:
+	// snapshot.storage.kubernetes.io/is-default-class: false
+	IsDefaultClass *bool `json:"isDefaultClass,omitempty"`
+	// Optional: DeletionPolicy defines how the VolumeSnapshotClass should be deleted. Defaults to Delete.
+	DeletionPolicy string `json:"deletionPolicy,omitempty"`
+}
+
 // TenantSpec defines the desired state of Tenant.
 type TenantSpec struct {
 	// Image repository address
@@ -58,6 +72,9 @@ type TenantSpec struct {
 	// StorageClasses represents storage classes that the tenant operator should create.
 	// +optional
 	StorageClasses []StorageClass `json:"storageClasses,omitempty"`
+	// VolumeSnapshotClasses represents volume snapshot classes that the tenant operator should create.
+	// +optional
+	VolumeSnapshotClasses []VolumeSnapshotClass `json:"volumeSnapshotClasses,omitempty"`
 }
 
 // TenantStatus defines the observed state of Tenant.
