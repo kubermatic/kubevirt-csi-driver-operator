@@ -18,10 +18,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/kubermatic/kubevirt-csi-driver-operator/controllers/persistentvolumeclaims"
+	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -49,6 +49,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(csiprovisionerv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(snapshotv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -75,10 +76,8 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-		Metrics: metricsserver.Options{
-			BindAddress: fmt.Sprintf("%v:%v", metricsAddr, 9443),
-		},
+		Scheme:                 scheme,
+		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "1ab14ea8.kubevirt.io",
