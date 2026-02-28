@@ -25,8 +25,9 @@ import (
 
 	snapshotv1 "github.com/kubernetes-csi/external-snapshotter/client/v8/apis/volumesnapshot/v1"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -36,12 +37,12 @@ func (r *TenantReconciler) reconcileVolumeSnapshotClasses(ctx context.Context, o
 	l := log.FromContext(ctx).WithName("volumeSnapshotClass")
 	l.Info("Reconciling volumeSnapshotClass")
 	for _, volumeSnapshotClass := range volumeSnapshotClasses {
-		deletionPolicy := volumeSnapshotClass.DeletionPolicy
+		deletionPolicy := snapshotv1.VolumeSnapshotContentDelete
 		if volumeSnapshotClass.DeletionPolicy != "" {
-			deletionPolicy = volumeSnapshotClass.DeletionPolicy
+			deletionPolicy = snapshotv1.DeletionPolicy(volumeSnapshotClass.DeletionPolicy)
 		}
 
-		vsc := snapshotv1.VolumeSnapshotClass{
+		desiredVSC := &snapshotv1.VolumeSnapshotClass{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: fmt.Sprintf("kubevirt-%s", volumeSnapshotClass.InfraVolumeSnapshotClass),
 				OwnerReferences: []metav1.OwnerReference{
@@ -51,23 +52,32 @@ func (r *TenantReconciler) reconcileVolumeSnapshotClasses(ctx context.Context, o
 					isDefaultVolumeSnapshotClassAnnotationKey: strconv.FormatBool(volumeSnapshotClass.IsDefaultClass != nil && *volumeSnapshotClass.IsDefaultClass),
 				},
 			},
-			Driver: "csi.kubevirt.io",
+			Driver: provisioner,
 			Parameters: map[string]string{
 				"infraSnapshotClassName": volumeSnapshotClass.InfraVolumeSnapshotClass,
 			},
-			DeletionPolicy: snapshotv1.DeletionPolicy(deletionPolicy),
+			DeletionPolicy: deletionPolicy,
 		}
 
-		currentVSC := vsc.DeepCopyObject().(*snapshotv1.VolumeSnapshotClass)
-		if _, err := ctrl.CreateOrUpdate(ctx, r.Client, currentVSC, func() error {
-			currentVSC.OwnerReferences = vsc.OwnerReferences
-			currentVSC.DeletionPolicy = vsc.DeletionPolicy
-			currentVSC.Annotations = vsc.Annotations
-			currentVSC.Parameters = vsc.Parameters
-			currentVSC.Driver = vsc.Driver
-			return nil
-		}); err != nil {
-			return err
+		existingVSC := &snapshotv1.VolumeSnapshotClass{}
+		err := r.Client.Get(ctx, types.NamespacedName{Name: desiredVSC.Name}, existingVSC)
+		if apierrors.IsNotFound(err) {
+			l.Info("Creating VolumeSnapshotClass", "name", desiredVSC.Name)
+			if err := r.Client.Create(ctx, desiredVSC); err != nil {
+				return fmt.Errorf("failed to create VolumeSnapshotClass %s: %w", desiredVSC.Name, err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("failed to get VolumeSnapshotClass %s: %w", desiredVSC.Name, err)
+		} else {
+			existingVSC.Annotations = desiredVSC.Annotations
+			existingVSC.OwnerReferences = desiredVSC.OwnerReferences
+			existingVSC.Parameters = desiredVSC.Parameters
+			existingVSC.DeletionPolicy = desiredVSC.DeletionPolicy
+			existingVSC.Driver = desiredVSC.Driver
+			l.Info("Updating VolumeSnapshotClass", "name", desiredVSC.Name)
+			if err := r.Client.Update(ctx, existingVSC); err != nil {
+				return fmt.Errorf("failed to update VolumeSnapshotClass %s: %w", desiredVSC.Name, err)
+			}
 		}
 	}
 
