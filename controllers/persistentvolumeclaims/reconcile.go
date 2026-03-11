@@ -41,18 +41,27 @@ func (r *Reconciler) reconcilePVCs(ctx context.Context, pvc *corev1.PersistentVo
 	assignedNodeName := pvc.Annotations["volume.kubernetes.io/selected-node"]
 
 	if pvc.Status.Phase == corev1.ClaimBound && sc.Provisioner == provisioner && assignedNodeName != "" {
-		assignedNode := &corev1.Node{}
-		if err := r.Client.Get(ctx, client.ObjectKey{Name: assignedNodeName}, assignedNode); err != nil {
-			return err
-		}
-
-		zone := assignedNode.Labels["topology.kubernetes.io/zone"]
-		region := assignedNode.Labels["topology.kubernetes.io/region"]
 
 		pv := &corev1.PersistentVolume{}
 		if err := r.Client.Get(ctx, client.ObjectKey{Name: pvc.Spec.VolumeName}, pv); err != nil {
 			return err
 		}
+
+		assignedNode := &corev1.Node{}
+		if err := r.Client.Get(ctx, client.ObjectKey{Name: assignedNodeName}, assignedNode); err != nil {
+			if client.IgnoreNotFound(err) == nil {
+				// If the assigned node is not found, it might have been deleted. If the NodeAffinity is already set, we can ignore this error, otherwise we should return it to trigger a retry.
+				if pv.Spec.NodeAffinity != nil {
+					return nil
+				}
+				return fmt.Errorf("assigned node %s not found for pvc %s and NodeAffinity is not set", assignedNodeName, pvc.Name)
+			}
+
+			return err
+		}
+
+		zone := assignedNode.Labels["topology.kubernetes.io/zone"]
+		region := assignedNode.Labels["topology.kubernetes.io/region"]
 
 		var matchExpressions []corev1.NodeSelectorRequirement
 
