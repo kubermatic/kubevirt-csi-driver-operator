@@ -1,0 +1,27 @@
+postsubmits:
+  - name: post-kubevirt-csi-driver-operator-image
+    always_run: true
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubevirt-csi-driver-operator.git"
+    branches:
+      - ^main$
+      # Match on tags
+      - ^v\d+\.\d+\.\d+.*
+    labels:
+      preset-docker-push: "true"
+      preset-goproxy: "true"
+    reporter_config:
+      slack:
+        channel: dev-kubermatic
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.25-node-22-kind-0.30-8
+          command:
+            - ./hack/ci/release-image.sh
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 1Gi
