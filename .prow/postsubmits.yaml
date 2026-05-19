@@ -4,7 +4,7 @@ postsubmits:
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubevirt-csi-driver-operator.git"
     branches:
-      - ^main$
+      - ^master$
       # Match on tags
       - ^v\d+\.\d+\.\d+.*
     labels:
