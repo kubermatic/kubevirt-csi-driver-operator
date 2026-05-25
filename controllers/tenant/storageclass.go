@@ -26,6 +26,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -50,8 +51,11 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 		Provisioner: provisioner,
 		Parameters: map[string]string{
 			"infraStorageClassName": storageClass.InfraStorageClassName,
-			"bus":                   storageClass.Bus},
-		VolumeBindingMode: storageClass.VolumeBindingMode,
+			"bus":                   storageClass.Bus,
+		},
+		VolumeBindingMode:    storageClass.VolumeBindingMode,
+		ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimPolicy(storageClass.ReclaimPolicy)),
+		AllowVolumeExpansion: ptr.To(storageClass.AllowVolumeExpansion),
 	}
 
 	var allowedTopologies []corev1.TopologySelectorTerm

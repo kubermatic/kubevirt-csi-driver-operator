@@ -47,6 +47,11 @@ type StorageClass struct {
 	// Regions represents a larger domain, made up of one or more zones. It is uncommon for Kubernetes clusters
 	// to span multiple regions
 	Regions []string `json:"regions,omitempty"`
+	// ReclaimPolicy controls the reclaimPolicy for dynamically provisioned PersistentVolumes of this storage class.
+	// Defaults to Delete.
+	ReclaimPolicy string `json:"reclaimPolicy,omitempty"`
+	// AllowVolumeExpansion shows whether the storage class allow volume expand.
+	AllowVolumeExpansion bool `json:"allowVolumeExpansion,omitempty"`
 }
 
 // VolumeSnapshotClass contains a list of KubeVirt infra cluster VolumeSnapshotClasses names used
