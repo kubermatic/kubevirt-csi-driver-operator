@@ -24,6 +24,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -47,6 +48,29 @@ var _ = Describe("Reconcile storageClass", func() {
 			scList := v1.StorageClassList{}
 			Expect(testClient.List(context.TODO(), &scList)).NotTo(HaveOccurred())
 			Expect(len(scList.Items)).Should(Equal(2))
+		})
+
+		It("should leave reclaimPolicy unset when omitted", func() {
+			testTenant := createTestTenant([]v1alpha1.StorageClass{{InfraStorageClassName: "test-local-path-1", Bus: "scsi"}})
+			Expect(testReconcile.reconcileStorageClasses(context.TODO(), testTenant.GetObjectMeta(), testTenant.Spec.StorageClasses)).NotTo(HaveOccurred())
+			scList := v1.StorageClassList{}
+			Expect(testClient.List(context.TODO(), &scList)).NotTo(HaveOccurred())
+			Expect(scList.Items).To(HaveLen(1))
+			Expect(scList.Items[0].ReclaimPolicy).To(BeNil())
+		})
+
+		It("should set reclaimPolicy when configured", func() {
+			testTenant := createTestTenant([]v1alpha1.StorageClass{{
+				InfraStorageClassName: "test-local-path-1",
+				Bus:                   "scsi",
+				ReclaimPolicy:         string(corev1.PersistentVolumeReclaimDelete),
+			}})
+			Expect(testReconcile.reconcileStorageClasses(context.TODO(), testTenant.GetObjectMeta(), testTenant.Spec.StorageClasses)).NotTo(HaveOccurred())
+			scList := v1.StorageClassList{}
+			Expect(testClient.List(context.TODO(), &scList)).NotTo(HaveOccurred())
+			Expect(scList.Items).To(HaveLen(1))
+			Expect(scList.Items[0].ReclaimPolicy).NotTo(BeNil())
+			Expect(*scList.Items[0].ReclaimPolicy).To(Equal(corev1.PersistentVolumeReclaimDelete))
 		})
 
 		It("should return an error in case of CreateOrUpdate failure", func() {
