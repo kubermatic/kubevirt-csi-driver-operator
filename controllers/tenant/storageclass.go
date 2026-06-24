@@ -54,8 +54,11 @@ func getDesiredStorageClass(obj metav1.Object, storageClass csiprovisionerv1alph
 			"bus":                   storageClass.Bus,
 		},
 		VolumeBindingMode:    storageClass.VolumeBindingMode,
-		ReclaimPolicy:        ptr.To(corev1.PersistentVolumeReclaimPolicy(storageClass.ReclaimPolicy)),
 		AllowVolumeExpansion: ptr.To(storageClass.AllowVolumeExpansion),
+	}
+
+	if storageClass.ReclaimPolicy != "" {
+		sc.ReclaimPolicy = ptr.To(corev1.PersistentVolumeReclaimPolicy(storageClass.ReclaimPolicy))
 	}
 
 	var allowedTopologies []corev1.TopologySelectorTerm
